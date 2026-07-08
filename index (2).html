@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoreWeave — AI Enablement Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --blue:#2741E7;--blue-dk:#1C31C0;--blue-lt:#EEF1FD;--blue-mid:#C5CCF8;
+  --black:#000;--bg:#F9FAFC;--white:#fff;--th:#111;--tb:#374151;--tm:#6B7280;
+  --border:#E5E7EB;--surface:#F3F4F6;
+  --green:#059669;--green-bg:#D1FAE5;--green-t:#065F46;
+  --amber:#D97706;--amber-bg:#FEF3C7;--amber-t:#92400E;
+  --red:#DC2626;--red-bg:#FEE2E2;--red-t:#991B1B;
+  --purple:#7C3AED;--purple-bg:#EDE9FE;--purple-t:#5B21B6;
+  --teal:#0D9488;--teal-bg:#CCFBF1;--teal-t:#134E4A;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--tb);font-size:14px;line-height:1.5}
+
+/* Header */
+.hdr{background:var(--black);height:56px;padding:0 40px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.hdr-l{display:flex;align-items:center;gap:14px}
+.logo-box{width:30px;height:30px;background:var(--blue);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.hdr-brand{color:#fff;font-size:15px;font-weight:700;letter-spacing:-.3px}
+.hdr-div{width:1px;height:20px;background:rgba(255,255,255,.18)}
+.hdr-sub{color:rgba(255,255,255,.5);font-size:12px}
+.hdr-r{display:flex;align-items:center;gap:12px}
+.month-pill{background:var(--blue);color:#fff;font-size:12px;font-weight:600;padding:5px 14px;border-radius:100px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;margin-right:5px}
+.dot.warn{background:var(--amber)}
+.hdr-meta{text-align:right;font-size:11px;color:rgba(255,255,255,.38)}
+
+/* Nav */
+.nav{background:var(--white);border-bottom:1px solid var(--border);padding:0 40px;display:flex;overflow-x:auto}
+.ni{display:inline-block;padding:13px 16px;font-size:12.5px;font-weight:500;color:var(--tm);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;text-decoration:none}
+.ni:hover{color:var(--blue)}
+.ni.on{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+
+/* Layout */
+.main{padding:28px 40px 80px;max-width:1440px;margin:0 auto}
+.sec{margin-bottom:40px}
+.sec-hdr{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.sec-title{font-size:16px;font-weight:700;color:var(--th);letter-spacing:-.3px;display:flex;align-items:center;gap:9px}
+.sec-icon{width:26px;height:26px;background:var(--blue-lt);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sec-desc{font-size:11.5px;color:var(--tm);margin-top:3px}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kc{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:18px 16px 14px;position:relative;overflow:hidden}
+.kc.blue-fill{background:var(--blue);border-color:var(--blue)}
+.kc.blue-fill .kl{color:rgba(255,255,255,.6)}
+.kc.blue-fill .kv{color:#fff}
+.kc.blue-fill .ks{color:rgba(255,255,255,.5)}
+.kl{font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.kv{font-size:26px;font-weight:700;color:var(--th);line-height:1;letter-spacing:-.5px}
+.kv.md{font-size:20px}
+.ks{font-size:11px;color:var(--tm);margin-top:5px;line-height:1.4}
+.krule{position:absolute;bottom:0;left:0;right:0;height:2.5px}
+.rb{background:var(--blue)}.rg{background:var(--green)}.rp{background:var(--purple)}.rt{background:var(--teal)}.ra{background:var(--amber)}
+
+/* Cards */
+.card{background:var(--white);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.card-h{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-t{font-size:13px;font-weight:600;color:var(--th)}
+.card-b{padding:18px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* Table */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--bg);padding:9px 13px;text-align:left;font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg)}
+tbody td{padding:10px 13px;color:var(--tb);vertical-align:middle}
+.td-h{font-weight:600;color:var(--th)}
+.td-m{color:var(--tm);font-size:11.5px}
+
+/* Badges */
+.b{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:600;line-height:1.7;white-space:nowrap}
+.b-live{background:var(--green-bg);color:var(--green-t)}
+.b-pilot{background:var(--amber-bg);color:var(--amber-t)}
+.b-dev{background:var(--surface);color:var(--tm)}
+.b-hub{background:var(--blue-lt);color:var(--blue-dk)}
+.b-spoke{background:var(--purple-bg);color:var(--purple-t)}
+.b-workato{background:#FEF3C7;color:#7A3B00}
+.b-glean{background:#DBEAFE;color:#1E40AF}
+.b-claude{background:var(--purple-bg);color:var(--purple-t)}
+.b-chatgpt{background:var(--green-bg);color:var(--green-t)}
+.b-kpmg{background:#F3E8FF;color:#6B21A8}
+.b-other{background:var(--surface);color:var(--tm)}
+
+/* Filters */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.fb{padding:5px 13px;border:1px solid var(--border);border-radius:100px;font-size:12px;font-weight:500;cursor:pointer;background:var(--white);color:var(--tm)}
+.fb.on{background:var(--blue);border-color:var(--blue);color:#fff}
+
+/* Org bars */
+.org-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.org-name{font-size:12px;font-weight:500;color:var(--tb);width:140px;text-align:right;flex-shrink:0}
+.org-track{flex:1;background:var(--surface);border-radius:4px;height:24px;overflow:hidden}
+.org-fill{height:100%;display:flex;align-items:center;padding-left:9px;border-radius:4px}
+.org-fill-lbl{font-size:11px;font-weight:700;color:#fff}
+.org-meta{width:60px;font-size:11px;color:var(--tm);text-align:right;flex-shrink:0}
+
+/* Impact */
+.ig{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}
+.ic{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column}
+.ic-rule{height:3px;border-radius:2px;margin-bottom:14px}
+.ic-name{font-size:13px;font-weight:700;color:var(--th)}
+.ic-org{font-size:11px;color:var(--tm);margin-top:2px;margin-bottom:12px}
+.ic-num{font-size:30px;font-weight:700;line-height:1;letter-spacing:-1px}
+.ic-lbl{font-size:11px;color:var(--tm);margin-top:3px}
+.ic-div{height:1px;background:var(--border);margin:12px 0}
+.ic-detail{font-size:11.5px;color:var(--tb);line-height:1.55;flex:1}
+.ic-sec{margin-top:10px;display:flex;align-items:baseline;gap:5px}
+.ic-sn{font-size:16px;font-weight:700;color:var(--th)}
+.ic-sl{font-size:11px;color:var(--tm)}
+.c-blue .ic-num{color:var(--blue)}.c-blue .ic-rule{background:var(--blue)}
+.c-green .ic-num{color:var(--green)}.c-green .ic-rule{background:var(--green)}
+.c-purple .ic-num{color:var(--purple)}.c-purple .ic-rule{background:var(--purple)}
+.c-teal .ic-num{color:var(--teal)}.c-teal .ic-rule{background:var(--teal)}
+.c-amber .ic-num{color:var(--amber)}.c-amber .ic-rule{background:var(--amber)}
+
+/* Legend */
+.leg{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:11px;color:var(--tm)}
+.leg-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;display:inline-block}
+
+/* Milestones */
+.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.mi{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:13px 15px;display:flex;gap:11px;align-items:flex-start}
+.mi-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.mi-done{background:var(--green-bg);color:var(--green-t)}
+.mi-prog{background:var(--amber-bg);color:var(--amber-t)}
+.mi-plan{background:var(--surface);color:var(--tm)}
+.mi-name{font-size:12px;font-weight:600;color:var(--th)}
+.mi-det{font-size:11px;color:var(--tm);margin-top:2px}
+.mi-bar{height:3px;background:var(--surface);border-radius:2px;margin-top:7px}
+.mi-fill{height:3px;border-radius:2px}
+
+/* Callouts */
+.cg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.co{border-radius:0 14px 14px 0;padding:13px 15px;border-left:3px solid}
+.co-win{background:var(--green-bg);border-color:var(--green)}
+.co-risk{background:var(--amber-bg);border-color:var(--amber)}
+.co-issue{background:var(--red-bg);border-color:var(--red)}
+.co-note{background:var(--blue-lt);border-color:var(--blue)}
+.co-type{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.co-win .co-type{color:var(--green-t)}.co-risk .co-type{color:var(--amber-t)}
+.co-issue .co-type{color:var(--red-t)}.co-note .co-type{color:var(--blue-dk)}
+.co-text{font-size:12px;color:var(--tb);line-height:1.55}
+
+@media(max-width:860px){
+  .g2{grid-template-columns:1fr}
+  .main,.hdr,.nav{padding-left:16px;padding-right:16px}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <span class="hdr-brand">CoreWeave</span>
+    <span class="hdr-div"></span>
+    <span class="hdr-sub">AI Enablement Dashboard</span>
+  </div>
+  <div class="hdr-r">
+    <span class="dot" id="dot"></span>
+    <div style="text-align:right">
+
+      <div class="hdr-meta" id="refreshLabel"></div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav">
+  <a class="ni on" data-t="s1" href="javascript:void(0)">Executive Summary</a>
+  <a class="ni" data-t="s2" href="javascript:void(0)">Agent Inventory</a>
+  <a class="ni" data-t="s3" href="javascript:void(0)">Adoption &amp; Usage</a>
+  <a class="ni" data-t="s4" href="javascript:void(0)">Org Adoption</a>
+  <a class="ni" data-t="s5" href="javascript:void(0)">Business Impact</a>
+  <a class="ni" data-t="s6" href="javascript:void(0)">Enablement</a>
+  <a class="ni" data-t="s7" href="javascript:void(0)">Risks &amp; Callouts</a>
+</nav>
+
+<main class="main">
+
+  <section class="sec" id="s1">
+    <div class="sec-hdr"><div>
+      <div class="sec-title"><span class="sec-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="4.5" height="4.5" rx="1" fill="#2741E7"/><rect x="8.5" y="1" width="4.5" height="4.5" rx="1" fill="#2741E7" opacity=".4"/><rect x="1" y="8.5" width="4.5" height="4.5" rx="1" fill="#2741E7" opacity=".4"/><rect x="8.5" y="8.5" width="4.5" height="4.5" rx="1" fill="#2741E7"/></svg></span>Executive Summary</div>
+      <div class="sec-desc">Top-line KPIs — monthly leadership snapshot</div>
+    </div></div>
+    <div class="kpi-grid" id="kpiGrid"></div>
+  </section>
+
+  <section class="sec" id="s2">
+    <div class="sec-hdr"><div>
+      <div class="sec-title"><span class="sec-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="1.8" rx=".9" fill="#2741E7"/><rect x="1" y="6.1" width="12" height="1.8" rx=".9" fill="#2741E7" opacity=".6"/><rect x="1" y="10.2" width="7" height="1.8" rx=".9" fill="#2741E7" opacity=".35"/></svg></span>Agent Inventory</div>
+      <div class="sec-desc">All hub &amp; spoke agents — filter by status or type</div>
+    </div></div>
+    <div class="filters" id="invFilters">
+      <button class="fb on" data-f="all">All</button>
+      <button class="fb" data-f="live">Live</button>
+      <button class="fb" data-f="pilot">Pilot</button>
+      <button class="fb" data-f="dev">In Dev</button>
+      <button class="fb" data-f="hub">Hub</button>
+      <button class="fb" data-f="spoke">Spoke</button>
+    </div>
+    <div class="card"><div class="tw">
+      <table>
+        <thead><tr><th>Agent</th><th>Area</th><th>Type</th><th>Status</th><th>POC</th><th>Platform</th><th>Impact</th><th>Updated</th></tr></thead>
+        <tbody id="invBody"></tbody>
+      </table>
+    </div></div>
+  </section>
+
+  <section class="sec" id="s3">
+    <div class="sec-hdr"><div>
+      <div class="sec-title"><span class="sec-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 11L4.5 6.5l2.5 2.5 3-4 3 1.5" stroke="#2741E7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Adoption &amp; Usage</div>
+      <div class="sec-desc">Agent counts by status, platform, and area</div>
+    </div></div>
+    <div class="g2" style="margin-bottom:14px">
+      <div class="card">
+        <div class="card-h">
+          <span class="card-t">Agents by Status</span>
+          <div class="leg" style="margin:0">
+            <span style="display:flex;align-items:center;gap:4px"><span class="leg-dot" style="background:#2741E7"></span>Hub</span>
+            <span style="display:flex;align-items:center;gap:4px"><span class="leg-dot" style="background:#C5CCF8"></span>Spoke</span>
+          </div>
+        </div>
+        <div class="card-b"><div style="position:relative;width:100%;height:220px"><canvas id="cStatus" role="img" aria-label="Agents by status">Chart.</canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="card-t">Platform Distribution</span></div>
+        <div class="card-b">
+          <div style="position:relative;width:100%;height:180px"><canvas id="cPlatform" role="img" aria-label="Platform split">Chart.</canvas></div>
+          <div class="leg" id="platLeg" style="margin-top:12px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="card-t">Agents by Area</span></div>
+      <div class="card-b"><div style="position:relative;width:100%;height:260px"><canvas id="cArea" role="img" aria-label="Agents by area">Chart.</canvas></div></div>
+    </div>
+  </section>
+
+  <section class="sec" id="s4">
+    <div class="sec-hdr"><div>
+      <div class="sec-title"><span class="sec-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="3" r="2" fill="#2741E7"/><rect x="5.2" y="5.8" width="3.6" height="1" rx=".5" fill="#2741E7"/><circle cx="2.5" cy="11" r="1.6" fill="#2741E7" opacity=".45"/><circle cx="7" cy="11" r="1.6" fill="#2741E7" opacity=".7"/><circle cx="11.5" cy="11" r="1.6" fill="#2741E7" opacity=".45"/></svg></span>Org-Level Adoption</div>
+      <div class="sec-desc">Agent presence per business area — L=Live P=Pilot D=Dev</div>
+    </div></div>
+    <div class="card"><div class="card-b" id="orgBars"></div></div>
+  </section>
+
+  <section class="sec" id="s5">
+    <div class="sec-hdr"><div>
+      <div class="sec-title"><span class="sec-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1l1.5 3.2 3.5.5-2.5 2.4.6 3.4L7 8.8l-3.1 1.7.6-3.4L2 4.7l3.5-.5L7 1z" fill="#2741E7" opacity=".85"/></svg></span>Business Impact</div>
+      <div class="sec-desc">Measured outcomes from production agents</div>
+    </div></div>
+    <div class="ig" id="impactGrid"></div>
+  </section>
+
+  <section class="sec" id="s6">
+    <div class="sec-hdr"><div>
+      <div class="sec-title"><span class="sec-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="#2741E7" stroke-width="1.4"/><path d="M4.5 7l2 2 3-3" stroke="#2741E7" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Enablement &amp; Rollout</div>
+      <div class="sec-desc">Platform launches, training, and governance milestones</div>
+    </div></div>
+    <div class="mg" id="msGrid"></div>
+  </section>
+
+  <section class="sec" id="s7">
+    <div class="sec-hdr"><div>
+      <div class="sec-title"><span class="sec-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L1 12.5h12L7 1.5z" stroke="#2741E7" stroke-width="1.4" stroke-linejoin="round" fill="none"/><line x1="7" y1="5.5" x2="7" y2="9" stroke="#2741E7" stroke-width="1.4" stroke-linecap="round"/><circle cx="7" cy="11" r=".7" fill="#2741E7"/></svg></span>Risks &amp; Callouts</div>
+      <div class="sec-desc">Key wins, open issues, and leadership notes</div>
+    </div></div>
+    <div class="cg" id="calloutGrid"></div>
+  </section>
+
+</main>
+
+<script>
+(function() {
+
+/* ================================================================
+   LIVE DATA CONFIG
+   Paste your CACHE tab CSV URL here to pull live data.
+   Get it from: Google Sheet → File → Share → Publish to web
+   → CACHE tab → CSV → Copy URL
+   Leave as "" to use the hardcoded fallback data below.
+================================================================ */
+var CACHE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRrDmYWAI7dj_Ck7zB0dtobMIxwuot27UQ5fgUFcl2OrsjFOlCpx2Kk51ApYCIl2XfSL0vJfrTaZqdD/pub?gid=1133768238&single=true&output=csv";
+
+/* ── Hardcoded fallback data ── */
+var HUB = [
+  {name:"New Hire Comms Agent",       area:"People",          poc:"IT-People",     platform:"workato", status:"live",  type:"hub", impact:"142 hires processed. 710+ minutes saved for HR-ops team.", updated:"2026-05-17"},
+  {name:"AP Lease Invoice Triager",   area:"Accounting",      poc:"IT-Accounting", platform:"workato", status:"pilot", type:"hub", impact:"513 invoices processed. ~130 hours saved over 4-week window.", updated:"2026-05-16"},
+  {name:"#ask-it",                    area:"IT",              poc:"IT-ITSM",       platform:"glean",   status:"live",  type:"hub", impact:"965 requests. 462 users. 71% automated.", updated:"2026-05-16"},
+  {name:"ISO Document Retriever",     area:"DC Ops",          poc:"IT-DCOps",      platform:"glean",   status:"live",  type:"hub", impact:"4 sites. 72.6% agent-provided docs. 56.8% suitable.", updated:"2026-05-16"},
+  {name:"CSAT",                       area:"IT",              poc:"IT",            platform:"workato", status:"pilot", type:"hub", impact:"Pilot group of 20 for 6 apps.", updated:""},
+  {name:"Lease Abstraction Asst",     area:"Accounting",      poc:"IT-Accounting", platform:"workato", status:"live",  type:"hub", impact:"21 pilot + 2 prod leases. 8-10 hrs reduced to 30 mins per lease.", updated:"2026-05-16"},
+  {name:"Nurture Campaign Agent",     area:"Marketing",       poc:"IT-Marketing",  platform:"workato", status:"live",  type:"hub", impact:"27.2% open rate. 7.04% CTR. 547 contacts. 5.12% goal conv.", updated:"2026-05-16"},
+  {name:"Non-Std Contract Extractor", area:"Accounting",      poc:"IT-Accounting", platform:"glean",   status:"live",  type:"hub", impact:"20 contracts processed. Use paused post-launch.", updated:"2026-05-16"},
+  {name:"SCIF-MileStone Tracker",     area:"Supply Chain",    poc:"IT-SC",         platform:"claude",  status:"pilot", type:"hub", impact:"30 Quotes. 21 RFQs created.", updated:""},
+  {name:"P2P",                        area:"Accounting",      poc:"IT-Accounting", platform:"kpmg",    status:"dev",   type:"hub", impact:"In development — KPMG-EMA platform.", updated:"2026-05-16"},
+  {name:"AP",                         area:"Accounting",      poc:"IT-Accounting", platform:"kpmg",    status:"dev",   type:"hub", impact:"In development — KPMG-EMA platform.", updated:"2026-05-16"},
+  {name:"Contract Leakage",           area:"Accounting",      poc:"IT-Accounting", platform:"kpmg",    status:"dev",   type:"hub", impact:"In development — KPMG-EMA platform.", updated:"2026-05-16"},
+];
+
+var SPOKE = [
+  {name:"#ask-hr",                    area:"HR",              poc:"Kat To",        platform:"glean",   status:"live",  type:"spoke", impact:"723 requests. 316 users.", updated:"2026-05-16"},
+  {name:"Tax Exemption Monitor",      area:"Tax",             poc:"Jon Guiliano",  platform:"claude",  status:"live",  type:"spoke", impact:"Real-time tracking of $1.3B in active tax exemptions.", updated:""},
+  {name:"Executive Headshot Studio",  area:"HR",              poc:"Amanda Lock",   platform:"glean",   status:"live",  type:"spoke", impact:"226 users. 643 runs.", updated:""},
+  {name:"Workplace Concierge",        area:"HR Workplace",    poc:"Angie",         platform:"glean",   status:"live",  type:"spoke", impact:"15 users. 50 runs. Live in all office Slack channels.", updated:""},
+  {name:"GridLock",                   area:"Sales",           poc:"Alex Peck",     platform:"claude",  status:"live",  type:"spoke", impact:"19 users. 330 views. GPU supply/demand visibility.", updated:"2026-05-16"},
+  {name:"Business Case Assistant",    area:"Sales",           poc:"Mike Zhang",    platform:"glean",   status:"live",  type:"spoke", impact:"85 runs. 16 users.", updated:""},
+  {name:"Briefster",                  area:"Marketing",       poc:"Diogo Dantas",  platform:"claude",  status:"live",  type:"spoke", impact:"5 users. ~3 days saved per product launch.", updated:"2026-05-16"},
+  {name:"Epoch",                      area:"DC Ops",          poc:"Joshua Talpia", platform:"claude",  status:"pilot", type:"spoke", impact:"13 WAU. 22 MAU.", updated:"2026-05-16"},
+  {name:"SCIF-PartScout",             area:"Supply Chain",    poc:"David Lee",     platform:"claude",  status:"live",  type:"spoke", impact:"35 RFQs. 33 quotes received. 6 PROCs created.", updated:"2026-05-16"},
+  {name:"Friday Weekly Work Report",  area:"IT",              poc:"IT",            platform:"glean",   status:"live",  type:"spoke", impact:"65 runs. 20 users.", updated:""},
+  {name:"Weave Competitive GPT",      area:"Sales",           poc:"Anu Vatsa",     platform:"chatgpt", status:"live",  type:"spoke", impact:"17 messages. 7 users.", updated:""},
+  {name:"Risk Agent",                 area:"Supply Chain",    poc:"Dan Kane",      platform:"claude",  status:"dev",   type:"spoke", impact:"In development.", updated:"2026-05-16"},
+  {name:"Oliver",                     area:"Supply Chain",    poc:"Dan Kane",      platform:"claude",  status:"dev",   type:"spoke", impact:"In development.", updated:"2026-05-16"},
+  {name:"Research Power Tool",        area:"Accounting",      poc:"Manish Gupta",  platform:"other",   status:"live",  type:"spoke", impact:"~100 hours saved. Cuts research time significantly.", updated:"2026-05-16"},
+  {name:"Media Intelligence",         area:"Marketing",       poc:"Diogo Dantas",  platform:"claude",  status:"dev",   type:"spoke", impact:"In development.", updated:"2026-05-16"},
+  {name:"Atlas",                      area:"DC Ops",          poc:"Lamar Wells",   platform:"claude",  status:"dev",   type:"spoke", impact:"In development. NL query tool for DC infrastructure.", updated:""},
+  {name:"CoreWeave PMM Advisor",      area:"Marketing",       poc:"May Olatoye",   platform:"chatgpt", status:"live",  type:"spoke", impact:"400 messages. 9 users.", updated:""},
+  {name:"Bare Metal Support Agent",   area:"Customer Support",poc:"Tom Feld",      platform:"glean",   status:"live",  type:"spoke", impact:"221 runs. 100 users.", updated:""},
+  {name:"cluster-health (skill)",     area:"IT",              poc:"IT",            platform:"claude",  status:"live",  type:"spoke", impact:"3 users. 1.2K runs.", updated:""},
+  {name:"docx (skill)",               area:"IT",              poc:"IT",            platform:"claude",  status:"live",  type:"spoke", impact:"92 users. 1.2K runs.", updated:""},
+  {name:"front-end design (skill)",   area:"IT",              poc:"IT",            platform:"claude",  status:"live",  type:"spoke", impact:"51 users. 881 runs.", updated:""},
+];
+
+var ALL = HUB.concat(SPOKE);
+
+/* ── Header ── */
+document.getElementById("refreshLabel").textContent = "Last updated: " + new Date().toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"});
+
+/* ── KPIs ── */
+function renderKPIs() {
+  var live  = ALL.filter(function(a){return a.status==="live";}).length;
+  var pilot = ALL.filter(function(a){return a.status==="pilot";}).length;
+  var dev   = ALL.filter(function(a){return a.status==="dev";}).length;
+  var cards = [
+    {l:"Total Agents",      v:ALL.length,  s:HUB.length+" hub / "+SPOKE.length+" spoke", r:"rb", fill:true},
+    {l:"Hub Agents",        v:HUB.length,  s:"Cross-org platform agents",                r:"rb"},
+    {l:"Spoke Agents",      v:SPOKE.length,s:"Org-specific agents",                      r:"rp"},
+    {l:"Live",              v:live,        s:pilot+" pilot / "+dev+" in dev",             r:"rg"},
+    {l:"Pilot",             v:pilot,       s:"Active pilots",                             r:"ra"},
+    {l:"In Dev",            v:dev,         s:"Under development",                         r:"rb"},
+    {l:"#ask-it Users",     v:"462",       s:"965 requests / 71% automated",             r:"rb"},
+    {l:"#ask-hr Requests",  v:"723",       s:"316 users served",                         r:"rp"},
+    {l:"Invoices Processed",v:"513",       s:"~130 hrs saved (4-week window)",            r:"rt", md:true},
+    {l:"Hires Automated",   v:"142",       s:"710+ mins saved for HR-ops",               r:"rg"},
+    {l:"docx Skill Runs",   v:"1.2K",      s:"92 users — most-used Claude skill",        r:"ra", md:true},
+    {l:"BM Support Users",  v:"100",       s:"221 total runs",                           r:"rb", md:true},
+  ];
+  document.getElementById("kpiGrid").innerHTML = cards.map(function(c) {
+    return '<div class="kc'+(c.fill?" blue-fill":"")+'"><div class="kl">'+c.l+'</div><div class="kv'+(c.md?" md":"")+'">'+c.v+'</div><div class="ks">'+c.s+'</div>'+(c.fill?"":'<div class="krule '+c.r+'"></div>')+'</div>';
+  }).join("");
+}
+
+/* ── Inventory ── */
+function platBadge(p) {
+  var labels = {workato:"Workato",glean:"Glean",claude:"Claude",chatgpt:"ChatGPT",kpmg:"KPMG-EMA",other:"Other"};
+  return '<span class="b b-'+p+'">'+(labels[p]||p)+'</span>';
+}
+function statusBadge(s) {
+  return s==="live"  ? '<span class="b b-live">Live</span>'
+       : s==="pilot" ? '<span class="b b-pilot">Pilot</span>'
+       :               '<span class="b b-dev">In Dev</span>';
+}
+function renderInventory(f) {
+  var rows = ALL.filter(function(a) {
+    return f==="all"||a.status===f||a.type===f;
+  });
+  document.getElementById("invBody").innerHTML = rows.map(function(a) {
+    return '<tr>'
+      +'<td class="td-h">'+a.name+'</td>'
+      +'<td class="td-m">'+a.area+'</td>'
+      +'<td><span class="b b-'+a.type+'">'+a.type+'</span></td>'
+      +'<td>'+statusBadge(a.status)+'</td>'
+      +'<td class="td-m">'+a.poc+'</td>'
+      +'<td>'+platBadge(a.platform)+'</td>'
+      +'<td class="td-m" style="max-width:240px;white-space:normal">'+a.impact+'</td>'
+      +'<td class="td-m">'+(a.updated||"&mdash;")+'</td>'
+      +'</tr>';
+  }).join("");
+}
+
+document.getElementById("invFilters").addEventListener("click", function(e) {
+  var b = e.target.closest(".fb");
+  if (!b) return;
+  document.querySelectorAll(".fb").forEach(function(x){x.classList.remove("on");});
+  b.classList.add("on");
+  renderInventory(b.dataset.f);
+});
+
+/* ── Charts ── */
+var cStatus, cPlatform, cArea;
+
+function renderCharts() {
+  var hL=HUB.filter(function(a){return a.status==="live";}).length;
+  var hP=HUB.filter(function(a){return a.status==="pilot";}).length;
+  var hD=HUB.filter(function(a){return a.status==="dev";}).length;
+  var sL=SPOKE.filter(function(a){return a.status==="live";}).length;
+  var sP=SPOKE.filter(function(a){return a.status==="pilot";}).length;
+  var sD=SPOKE.filter(function(a){return a.status==="dev";}).length;
+
+  if (cStatus) cStatus.destroy();
+  cStatus = new Chart(document.getElementById("cStatus"), {
+    type:"bar",
+    data:{labels:["Live","Pilot","In Dev"],datasets:[
+      {label:"Hub",  data:[hL,hP,hD],backgroundColor:"#2741E7",borderRadius:5,borderSkipped:false},
+      {label:"Spoke",data:[sL,sP,sD],backgroundColor:"#C5CCF8",borderRadius:5,borderSkipped:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:"top",labels:{font:{size:11},boxWidth:10,padding:14}}},
+      scales:{x:{ticks:{font:{size:12},color:"#6B7280"},grid:{display:false}},
+              y:{ticks:{font:{size:10},color:"#6B7280",stepSize:1},grid:{color:"#F3F4F6"}}}}
+  });
+
+  var pc={};
+  ALL.forEach(function(a){pc[a.platform]=(pc[a.platform]||0)+1;});
+  var pcol={glean:"#2741E7",claude:"#7C3AED",workato:"#D97706",chatgpt:"#059669",kpmg:"#0D9488",other:"#9CA3AF"};
+  var plbl={glean:"Glean",claude:"Claude",workato:"Workato",chatgpt:"ChatGPT",kpmg:"KPMG-EMA",other:"Other"};
+  var pk=Object.keys(pc).sort(function(a,b){return pc[b]-pc[a];});
+
+  if (cPlatform) cPlatform.destroy();
+  cPlatform = new Chart(document.getElementById("cPlatform"), {
+    type:"doughnut",
+    data:{labels:pk.map(function(k){return plbl[k]||k;}),
+          datasets:[{data:pk.map(function(k){return pc[k];}),
+                     backgroundColor:pk.map(function(k){return pcol[k]||"#9CA3AF";}),
+                     borderWidth:0,hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"66%",plugins:{legend:{display:false}}}
+  });
+  document.getElementById("platLeg").innerHTML = pk.map(function(k) {
+    return '<span style="display:flex;align-items:center;gap:4px"><span class="leg-dot" style="background:'+(pcol[k]||"#9CA3AF")+'"></span>'+(plbl[k]||k)+" ("+pc[k]+")</span>";
+  }).join("");
+
+  var ac={};
+  ALL.forEach(function(a){if(a.area)ac[a.area]=(ac[a.area]||0)+1;});
+  var ar=Object.entries(ac).sort(function(a,b){return b[1]-a[1];});
+  var mx=ar.length?ar[0][1]:1;
+  function bc(n){return n>=4?"#2741E7":n>=2?"#5A72EE":"#8FA3F5";}
+
+  if (cArea) cArea.destroy();
+  cArea = new Chart(document.getElementById("cArea"), {
+    type:"bar",
+    data:{labels:ar.map(function(a){return a[0];}),
+          datasets:[{data:ar.map(function(a){return a[1];}),
+                     backgroundColor:ar.map(function(a){return bc(a[1]);}),
+                     borderRadius:4,borderSkipped:false,barThickness:18}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{max:mx+1,ticks:{font:{size:10},color:"#6B7280",stepSize:1},grid:{color:"#F3F4F6"}},
+              y:{ticks:{font:{size:11},color:"#374151"},grid:{display:false}}},
+      animation:{onComplete:function(ctx){
+        var ch=ctx.chart,mt=ch.getDatasetMeta(0),c=ch.ctx;
+        c.save();c.font="700 11px sans-serif";c.fillStyle="#111";
+        c.textBaseline="middle";c.textAlign="left";
+        mt.data.forEach(function(b,i){c.fillText(ar[i][1],b.x+6,b.y);});
+        c.restore();
+      }}}
+  });
+}
+
+/* ── Org bars ── */
+function renderOrgBars() {
+  var am={};
+  ALL.forEach(function(a){
+    if(!a.area)return;
+    if(!am[a.area])am[a.area]={live:0,pilot:0,dev:0,total:0};
+    am[a.area][a.status]++;am[a.area].total++;
+  });
+  var sr=Object.entries(am).sort(function(a,b){return b[1].total-a[1].total;});
+  var mx=sr.length?sr[0][1].total:1;
+  function bc(n){return n>=4?"#2741E7":n>=2?"#5A72EE":"#8FA3F5";}
+  document.getElementById("orgBars").innerHTML = sr.map(function(e) {
+    var area=e[0],d=e[1];
+    return '<div class="org-row">'
+      +'<div class="org-name">'+area+'</div>'
+      +'<div class="org-track"><div class="org-fill" style="width:'+Math.round(d.total/mx*100)+'%;background:'+bc(d.total)+'">'
+      +'<span class="org-fill-lbl">'+d.total+' agent'+(d.total>1?"s":"")+'</span></div></div>'
+      +'<div class="org-meta">'
+      +(d.live  ?'<span style="color:#059669;font-weight:700;font-size:10px">'+d.live  +'L</span> ':'')
+      +(d.pilot ?'<span style="color:#D97706;font-weight:700;font-size:10px">'+d.pilot +'P</span> ':'')
+      +(d.dev   ?'<span style="color:#6B7280;font-size:10px">'+d.dev+'D</span>':'')
+      +'</div></div>';
+  }).join("");
+}
+
+/* ── Impact ── */
+var IMPACTS = [
+  {name:"AP Lease Invoice Triager",  org:"Accounting / Workato",      num:"513",    lbl:"invoices processed automatically", color:"blue",  detail:"~130 hours saved over a 4-week window. Phase 1 of automated AP invoice triage.",        sec:"130 hrs",   seclbl:"saved this period"},
+  {name:"#ask-it",                   org:"IT / Glean + Slack",         num:"71%",   lbl:"of requests automated",            color:"green", detail:"965 total requests / 462 unique users. Hub anchor agent for IT service requests.",      sec:"965",       seclbl:"total requests"},
+  {name:"New Hire Comms Agent",      org:"People / Workato",           num:"142",   lbl:"hires processed since launch",     color:"purple",detail:"710+ minutes saved for HR-ops team. Automates onboarding emails via Greenhouse.",       sec:"710+ min",  seclbl:"HR-ops time saved"},
+  {name:"Nurture Campaign Agent",    org:"Marketing / Workato",        num:"7.04%", lbl:"click-through rate",               color:"teal",  detail:"27.2% open rate / 547 contacts / 5.12% goal conversion. Above B2B benchmark.",        sec:"547",       seclbl:"contacts in pipeline"},
+  {name:"Lease Abstraction Asst",    org:"Accounting / Workato",       num:"30 min",lbl:"per lease (was 8-10 hrs)",         color:"amber", detail:"21 pilot + 2 production leases parsed. Massive time compression on doc extraction.",   sec:"23",        seclbl:"leases processed"},
+  {name:"Bare Metal Support Agent",  org:"Customer Support / Glean",   num:"100",   lbl:"users served",                     color:"blue",  detail:"221 runs. Supports customer-facing bare metal compute issue resolution.",               sec:"221",       seclbl:"total runs"},
+  {name:"Executive Headshot Studio", org:"HR / Glean",                 num:"643",   lbl:"headshots generated",              color:"green", detail:"226 unique users. AI-generated professional headshots from a reference photo.",         sec:"226",       seclbl:"unique users"},
+  {name:"Tax Exemption Monitor",     org:"Tax / Claude",               num:"$1.3B", lbl:"in tax exemptions tracked",        color:"purple",detail:"Replaces manual tracking with real-time app pulling from CoreWeave's data lake.",       sec:"Real-time", seclbl:"live data sync"},
+];
+
+function renderImpact() {
+  document.getElementById("impactGrid").innerHTML = IMPACTS.map(function(ag) {
+    return '<div class="ic c-'+ag.color+'">'
+      +'<div class="ic-rule"></div>'
+      +'<div class="ic-name">'+ag.name+'</div>'
+      +'<div class="ic-org">'+ag.org+'</div>'
+      +'<div class="ic-num">'+ag.num+'</div>'
+      +'<div class="ic-lbl">'+ag.lbl+'</div>'
+      +'<div class="ic-div"></div>'
+      +'<div class="ic-detail">'+ag.detail+'</div>'
+      +(ag.sec?'<div class="ic-sec"><span class="ic-sn">'+ag.sec+'</span><span class="ic-sl">'+ag.seclbl+'</span></div>':'')
+      +'</div>';
+  }).join("");
+}
+
+/* ── Milestones ── */
+var MILESTONES = [
+  {name:"Glean — org-wide rollout",      status:"complete",detail:"All business areas connected",           pct:100},
+  {name:"Claude Enterprise License",     status:"complete",detail:"500 seats / company-wide access",        pct:100},
+  {name:"Workato AI Platform",           status:"complete",detail:"Hub for People, Finance, Marketing",    pct:100},
+  {name:"Hub Agent Program — Wave 1",    status:"complete",detail:"6 hub agents live or piloting",          pct:100},
+  {name:"AI Dashboard in Confluence",    status:"complete",detail:"Auto-updated daily via Apps Script",     pct:100},
+  {name:"KPMG-EMA Platform",             status:"progress",detail:"P2P, AP, Contract Leakage in dev",       pct:40},
+  {name:"AI Governance Framework",       status:"progress",detail:"Policy v1 published / v2 in review",    pct:70},
+  {name:"Spoke Agent Program",           status:"progress",detail:"16 spokes / 11 live",                   pct:75},
+  {name:"Claude Skills Library",         status:"progress",detail:"3 skills live",                         pct:50},
+  {name:"Atlas — DC Infra Query Tool",   status:"planned", detail:"In development",                        pct:15},
+  {name:"Risk Agent (Supply Chain)",     status:"planned", detail:"In dev — Dan Kane",                     pct:10},
+];
+
+function renderMilestones() {
+  var icon={complete:"&#10003;",progress:"&#9681;",planned:"&#9675;"};
+  var cls ={complete:"mi-done",progress:"mi-prog",planned:"mi-plan"};
+  var bc  ={complete:"#059669",progress:"#2741E7",planned:"#E5E7EB"};
+  document.getElementById("msGrid").innerHTML = MILESTONES.map(function(m) {
+    return '<div class="mi">'
+      +'<div class="mi-icon '+cls[m.status]+'">'+icon[m.status]+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div class="mi-name">'+m.name+'</div>'
+      +'<div class="mi-det">'+m.detail+'</div>'
+      +'<div class="mi-bar"><div class="mi-fill" style="width:'+m.pct+'%;background:'+bc[m.status]+'"></div></div>'
+      +'</div></div>';
+  }).join("");
+}
+
+/* ── Callouts ── */
+var CALLOUTS = [
+  {type:"win",  text:"AP Lease Invoice Triager: 513 invoices processed / ~130 hrs saved in 4 weeks."},
+  {type:"win",  text:"#ask-it: 71% automation rate / 462 unique users — highest-volume hub agent."},
+  {type:"win",  text:"New Hire Comms Agent: 142 hires + 710+ minutes saved since May 29 launch."},
+  {type:"win",  text:"Tax Exemption Monitor tracking $1.3B in exemptions with real-time data lake integration."},
+  {type:"win",  text:"docx Claude Skill: 92 users and 1.2K runs — most broadly adopted skill in the library."},
+  {type:"risk", text:"Non-Std Contract Extractor: use paused post-launch. Needs re-activation decision."},
+  {type:"risk", text:"4 In Dev agents (Oliver, Risk Agent, Atlas, Media Intelligence) have no ETA."},
+  {type:"issue",text:"SCIF agents still in pilot — Supply Chain needs dedicated POC coverage to reach full launch."},
+  {type:"note", text:"KPMG-EMA platform (P2P, AP, Contract Leakage) all in dev — Q3 milestone review needed."},
+  {type:"note", text:"Nurture Campaign open rate 27.2% / CTR 7.04% — above B2B benchmarks, consider expanding."},
+];
+
+function renderCallouts() {
+  var lbl={win:"Key Win",risk:"Risk",issue:"Open Issue",note:"Note"};
+  var ico={win:"&#9733;",risk:"&#9650;",issue:"&#9679;",note:"&#9670;"};
+  document.getElementById("calloutGrid").innerHTML = CALLOUTS.map(function(c) {
+    return '<div class="co co-'+c.type+'">'
+      +'<div class="co-type">'+ico[c.type]+" "+lbl[c.type]+'</div>'
+      +'<div class="co-text">'+c.text+'</div>'
+      +'</div>';
+  }).join("");
+}
+
+/* ── Nav ── */
+document.querySelectorAll(".ni").forEach(function(a) {
+  a.addEventListener("click", function(e) {
+    e.preventDefault();
+    var target = document.getElementById(a.dataset.t);
+    if (target) target.scrollIntoView({behavior:"smooth",block:"start"});
+    document.querySelectorAll(".ni").forEach(function(n){n.classList.remove("on");});
+    a.classList.add("on");
+  });
+});
+
+/* ── CSV parser for CACHE tab ── */
+function parseCache(csv) {
+  var text = csv.trim();
+  if (text.startsWith('"') && text.endsWith('"')) {
+    text = text.slice(1, -1).replace(/""/g, '"');
+  }
+  return JSON.parse(text);
+}
+
+/* ── Boot — try live CSV first, fall back to hardcoded ── */
+function render() {
+  document.getElementById("refreshLabel").textContent =
+    "Updated " + new Date().toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric"});
+  renderKPIs();
+  renderInventory("all");
+  renderCharts();
+  renderOrgBars();
+  renderImpact();
+  renderMilestones();
+  renderCallouts();
+}
+
+if (CACHE_CSV_URL) {
+  fetch(CACHE_CSV_URL)
+    .then(function(res) { return res.text(); })
+    .then(function(text) {
+      var json = parseCache(text);
+      if (json.hub && json.spoke) {
+        HUB   = json.hub;
+        SPOKE = json.spoke;
+        ALL   = HUB.concat(SPOKE);
+        var sm = json.summary || {};
+        document.getElementById("refreshLabel").textContent =
+          sm.generated_at ? "Updated " + new Date(sm.generated_at).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "";
+        document.getElementById("dot").style.background = "#059669";
+        console.log("[CW-DASH] Live data loaded:", ALL.length, "agents");
+      }
+      render();
+    })
+    .catch(function(err) {
+      console.warn("[CW-DASH] CSV fetch failed, using hardcoded data:", err.message);
+      render();
+    });
+} else {
+  render();
+}
+
+})();
+</script>
+</body>
+</html>
