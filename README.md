@@ -2,8 +2,6 @@
 
 Internal monthly dashboard for AI agent reporting — OKR & leadership review.
 
-**Live URL:** https://tmohinuddin.github.io/dashboard
-
 ---
 
 ## What this is
@@ -47,22 +45,9 @@ No manual action needed.
 3. Check the Execution log for `SUCCESS`
 
 ---
-
-## Files
-
-| File | Purpose |
-|------|---------|
-| `index.html` | Self-contained dashboard — all CSS, JS, and data inline |
-| `README.md` | This file |
-
 ---
 
 ## Setup (already done — for reference only)
-
-### Google Sheet
-- Sheet ID: `1N2FQ8ecJlio6uG9D5apNUOZ4apBvBldDdkKSFs6rhLw`
-- Tabs: HUB, SPOKE, CACHE
-- CACHE tab published as CSV for live fetch
 
 ### Apps Script
 - Reads HUB + SPOKE tabs
@@ -70,23 +55,6 @@ No manual action needed.
 - Pushes full dashboard HTML to Confluence via REST API
 - Runs daily at 6am via time-driven trigger
 
-### GitHub Pages
-- Repo: `tmohinuddin/dashboard`
-- Branch: `main`
-- File: `index.html` (root)
-- URL: `https://tmohinuddin.github.io/dashboard`
 
-### Confluence
-- Page: AI Enablement Dashboard — Monthly Review
-- URL: `https://coreweave.atlassian.net/wiki/spaces/IT/pages/1888944130`
-- Updated automatically via Apps Script daily
-
----
 
 ## Contacts
-
-| Role | Name |
-|------|------|
-| Dashboard owner | tmohinuddin@coreweave.com |
-| Google Sheet | CoreWeave IT AI Team |
-| Apps Script | Attached to the Google Sheet |
